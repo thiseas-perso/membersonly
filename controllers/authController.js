@@ -1,18 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
-exports.signup = async (req, res, next) => {
-  const newUser = await User.create({
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    email: req.body.email,
-  });
-  const token = jwt.sign({ id: newUser._id }, process.env.JWT_KEY, {
+const createSendToken = (user, statusCode, res) => {
+  const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
-
   const cookieOptions = {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
@@ -24,13 +16,23 @@ exports.signup = async (req, res, next) => {
     cookieOptions.secure = true; //use https
   }
   res.cookie('jwt', token, cookieOptions);
-  res.status(201).json({
+  res.status(statusCode).json({
     status: 'success',
     token,
     data: {
-      newUser,
+      user,
     },
   });
+};
+exports.signup = async (req, res, next) => {
+  const newUser = await User.create({
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    password: req.body.password,
+    passwordConfirm: req.body.passwordConfirm,
+    email: req.body.email,
+  });
+  createSendToken(newUser, 200, res);
 };
 
 exports.login = async (req, res, next) => {
@@ -46,27 +48,7 @@ exports.login = async (req, res, next) => {
     return next(new Error('Incorrect name or password'));
   }
   //if all good, send token to client
-  const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true,
-  };
-
-  if (process.env.NODE_ENV === 'production') {
-    cookieOptions.secure = true; //use https
-  }
-  res.cookie('jwt', token, cookieOptions);
-  res.status(200).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    },
-  });
+  createSendToken(user, 200, res);
 };
 
 exports.logout = async (req, res, next) => {

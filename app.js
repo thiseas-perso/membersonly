@@ -1,9 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const usersRouter = require('./routes/userRoutes');
 const postsRouter = require('./routes/postsRoutes');
 const authController = require('./controllers/authController');
-const cookieParser = require('cookie-parser');
 
 const app = express();
 
