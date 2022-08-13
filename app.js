@@ -15,7 +15,9 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
+app.post('/api/v1/token', authController.protect, authController.refreshToken);
 app.get('/api/v1/secret', authController.protect, (req, res) => {
+  console.log(req.user);
   res.json({
     message: 'secret message!!!',
   });
