@@ -23,3 +23,5 @@ const postSchema = mongoose.Schema({
     required: [true, 'A review must belong to a user'],
   },
 });
+
+module.exports = mongoose.model('Post', postSchema);
