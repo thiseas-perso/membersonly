@@ -6,14 +6,15 @@ exports.handleRefreshToken = async (req, res, next) => {
   let refreshToken;
   if (req.cookies.jwt) {
     refreshToken = req.cookies.jwt;
-    res.clearCookie('jwt');
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
   }
-  // if (!refreshToken) {
-  //   return res.status(401).json({ message: 'not logged in' });
-  // }
+
   //NOTE: steps :
   // find user that matches refresh token TEMP SOLUTION
-  const user = await User.find({ refreshToken });
+  const user = await User.find({ refreshToken: [refreshToken] });
   if (!user) return res.sendStatus(403);
 
   try {
@@ -38,6 +39,7 @@ exports.handleRefreshToken = async (req, res, next) => {
     const cookieOptions = {
       maxAge: process.env.JWT_COOKIE_EXPIRES_IN * 60 * 60 * 1000,
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
     };
     // NOTE: we still need to save it to our DB!!! TEMP SOLUTION
     const updatedUser = await User.findByIdAndUpdate(

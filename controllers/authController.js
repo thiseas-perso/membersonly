@@ -11,11 +11,9 @@ const createSendToken = async (user, statusCode, res) => {
   const cookieOptions = {
     maxAge: process.env.JWT_COOKIE_EXPIRES_IN * 60 * 60 * 1000,
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
   };
 
-  if (process.env.NODE_ENV === 'production') {
-    cookieOptions.secure = true; //use https
-  }
   user.password = undefined; //so that we don't return the password
 
   // NOTE: we still need to save it to our DB!!! TEMP SOLUTION
@@ -72,7 +70,27 @@ exports.login = async (req, res, next) => {
 //
 
 exports.logout = async (req, res, next) => {
-  res.status(200).clearCookie('jwt').json({ message: 'logged out!' });
+  //NOTE:  on frontEnd/Client, also delete accessToken!
+  const cookies = req.cookies;
+  if (!cookies?.jwt) return res.sendStatus(204); //No content
+  const refreshToken = cookies.jwt;
+  //NOTE: is refreshToken in DB?
+  const user = await User.findOne({ refreshToken: [refreshToken] });
+  if (!user) {
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+    return res.sendStatus(403);
+  }
+  //NOTE: delete refreshToken from DB:
+  user.refreshToken = [];
+  const result = await user.save();
+  res.clearCookie('jwt', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
+  res.json({ message: 'logged out!!!', user: result });
 };
 
 exports.protect = async (req, res, next) => {
