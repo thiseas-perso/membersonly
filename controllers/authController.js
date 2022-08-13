@@ -10,11 +10,9 @@ const createSendToken = (user, statusCode, res) => {
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
   };
 
-  if (process.env.NODE_ENV === 'production') {
-    cookieOptions.secure = true; //use https
-  }
   res.cookie('jwt', token, cookieOptions);
   res.status(statusCode).json({
     status: 'success',
@@ -52,7 +50,13 @@ exports.login = async (req, res, next) => {
 };
 
 exports.logout = async (req, res, next) => {
-  res.status(200).clearCookie('jwt').json({ message: 'logged out!' });
+  res
+    .status(200)
+    .clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    })
+    .json({ message: 'logged out!' });
 };
 
 exports.protect = async (req, res, next) => {
