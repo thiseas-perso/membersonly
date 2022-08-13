@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const usersRouter = require('./routes/userRoutes');
 const postsRouter = require('./routes/postsRoutes');
 const authController = require('./controllers/authController');
+const refreshRouter = require('./routes/refreshRoutes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
+app.use('/api/v1/refresh', refreshRouter);
 app.get('/api/v1/secret', authController.verifyJWT, (req, res) => {
   res.json({
     message: 'secret message!!!',

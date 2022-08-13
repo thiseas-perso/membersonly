@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
-const createSendToken = (user, statusCode, res) => {
+const createSendToken = async (user, statusCode, res) => {
   const accessToken = jwt.sign({ id: user._id }, process.env.JWT_ACCESS_KEY, {
     expiresIn: process.env.JWT_ACCESS_KEY_EXPIRES_IN,
   });
@@ -9,7 +9,7 @@ const createSendToken = (user, statusCode, res) => {
     expiresIn: process.env.JWT_REFRESH_KEY_EXPIRES_IN,
   });
   const cookieOptions = {
-    maxAge: process.env.JWT_REFRESH_KEY_EXPIRES_IN * 60 * 60 * 1000,
+    maxAge: process.env.JWT_COOKIE_EXPIRES_IN * 60 * 60 * 1000,
     httpOnly: true,
   };
 
@@ -17,6 +17,9 @@ const createSendToken = (user, statusCode, res) => {
     cookieOptions.secure = true; //use https
   }
   user.password = undefined; //so that we don't return the password
+
+  // NOTE: we still need to save it to our DB!!! TEMP SOLUTION
+  await User.findByIdAndUpdate(user._id, { refreshToken: [refreshToken] });
 
   //NOTE: the refresh token is send with a cookie
   res.cookie('jwt', refreshToken, cookieOptions);
@@ -41,7 +44,7 @@ exports.signup = async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm,
     email: req.body.email,
   });
-  createSendToken(newUser, 200, res);
+  await createSendToken(newUser, 200, res);
 };
 
 //
@@ -61,7 +64,7 @@ exports.login = async (req, res, next) => {
     return next('Incorrect name or password');
   }
   //if all good, send token to client
-  createSendToken(user, 200, res);
+  await createSendToken(user, 200, res);
 };
 
 //
