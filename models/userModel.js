@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema(
       },
       select: false,
     },
+    refreshToken: [String],
   },
   {
     toObject: { virtuals: true },
